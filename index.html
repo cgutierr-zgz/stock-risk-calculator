@@ -186,27 +186,26 @@
              const list = document.getElementById('savedTradesList');
              list.innerHTML = trades.map((trade, index) => {
                  const shares = Math.floor((trade.balance * (trade.riskPercent / 100)) / (trade.entry - trade.stop));
+                 const positionSize = shares * trade.entry;
+                 const riskPerShare = trade.entry - trade.stop;
                  const upsideValue = ((trade.target - trade.entry) / trade.entry * 100);
                  const upside = upsideValue.toFixed(2);
                  const upsideColor = upsideValue >= 0 ? 'text-green-400' : 'text-red-400';
-                 const upsideText = upsideValue >= 0 ? `+${upside}%` : `${upside}%`;
+                 const upsideText = upsideValue >= 0 ? `${upside}% upside` : `${upside}% downside`;
 
                  return `
-                     <li class="group flex justify-between items-center bg-gray-700 hover:bg-gray-600 p-3 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg">
-                         <div class="flex items-center space-x-3 cursor-pointer" onclick="showTradeDetails(${index})">
-                             <span class="text-xl font-semibold hover:text-blue-400 transition-colors">${trade.symbol}</span>
-                             <span class="text-sm ${upsideColor} font-medium">${upsideText}</span>
+                     <li class="bg-gray-700 p-2 rounded flex justify-between items-center">
+                         <div class="cursor-pointer hover:underline" onclick="showTradeDetails(${index})">
+                             ${trade.symbol}
                          </div>
-                         <div class="flex items-center space-x-4">
-                             <span class="bg-gray-800 px-3 py-1 rounded-full text-sm font-medium">${shares} shares</span>
-                             <button onclick="deleteTrade(event, ${index})" 
-                                     class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 
-                                            text-gray-400 hover:text-red-400 transform hover:scale-110">
-                                    🗑 
-                                </button>
-                            </div>
-                        </li>
-                    `;
+                         <div class="text-sm text-right">
+                             <div class="${upsideColor}">${shares} shares (${upsideText})</div>
+                             <div class="text-gray-400">Position: ${trade.currency}${positionSize.toFixed(2)}</div>
+                             <div class="text-gray-400">Risk/share: ${trade.currency}${riskPerShare.toFixed(2)}</div>
+                         </div>
+                         <button onclick="deleteTrade(event, ${index})" class="ml-2 text-red-400 hover:text-red-600">✖️</button>
+                     </li>
+                 `;
              }).join('');
          }
 
