@@ -7,9 +7,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="flex justify-center items-center h-screen bg-gray-900 text-white">
-    <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-96 relative">
+        <button onclick="toggleMenu()" class="absolute top-2 right-2 bg-gray-700 p-2 rounded">☰</button>
         <h1 class="text-2xl font-bold mb-4 text-center">Stock Risk Calculator</h1>
         <div class="space-y-3">
+            <div>
+                <label class="block">Trade Name</label>
+                <input type="text" id="tradeName" class="w-full p-2 rounded bg-gray-700 text-white">
+            </div>
+            <div>
+                <label class="block">Stock Symbol</label>
+                <input type="text" id="stockSymbol" class="w-full p-2 rounded bg-gray-700 text-white">
+            </div>
             <div>
                 <label class="block">Account Balance</label>
                 <div class="flex space-x-2">
@@ -22,35 +31,38 @@
                     </select>
                 </div>
             </div>
-            
             <div>
                 <label class="block">Risk Percentage (%)</label>
                 <input type="number" id="risk" class="w-full p-2 rounded bg-gray-700 text-white">
             </div>
-            
             <div>
                 <label class="block">Entry Price</label>
                 <input type="number" id="entry" class="w-full p-2 rounded bg-gray-700 text-white">
             </div>
-            
             <div>
                 <label class="block">Stop Loss Price</label>
                 <input type="number" id="stop" class="w-full p-2 rounded bg-gray-700 text-white">
             </div>
-            
             <div>
                 <label class="block">Target Price</label>
                 <input type="number" id="target" class="w-full p-2 rounded bg-gray-700 text-white">
             </div>
-            
             <button onclick="calculate()" class="w-full bg-blue-500 p-2 rounded mt-4 hover:bg-blue-600">Calculate</button>
         </div>
         <div id="result" class="mt-4 text-sm"></div>
         <button onclick="saveTrade()" class="w-full bg-green-500 p-2 rounded mt-2 hover:bg-green-600">Save Trade</button>
-        <div id="trades" class="mt-4 text-sm"></div>
+        <div id="tradesMenu" class="hidden absolute top-0 right-0 bg-gray-800 w-64 h-full p-4 shadow-lg">
+            <button onclick="toggleMenu()" class="absolute top-2 right-2 text-white">✖</button>
+            <h2 class="text-lg font-bold">Saved Trades</h2>
+            <div id="trades" class="mt-4 text-sm"></div>
+        </div>
     </div>
 
     <script>
+        function toggleMenu() {
+            document.getElementById('tradesMenu').classList.toggle('hidden');
+        }
+
         function getCookie(name) {
             let cookies = document.cookie.split('; ');
             for (let cookie of cookies) {
@@ -86,20 +98,9 @@
             let riskAmount = balance * riskPercent;
             let riskPerShare = entry - stop;
             let shares = Math.floor(riskAmount / riskPerShare);
-            let positionSize = shares * entry;
             let potentialProfit = shares * (target - entry);
-            let rewardToRiskRatio = (target - entry) / (entry - stop);
-            
-            let ratioColor = rewardToRiskRatio > 5 ? 'text-blue-400' :
-                             rewardToRiskRatio > 2.5 ? 'text-green-400' :
-                             rewardToRiskRatio > 1 ? 'text-orange-400' : 'text-red-400';
-            
-            document.getElementById('result').innerHTML = `
-                <p class='text-green-400 font-bold text-lg'>Buy ${shares} shares</p>
-                <p class='text-gray-400 text-sm'>Rounded down to stay within risk limits</p>
-                <p class='text-green-400 font-bold'>Potential profit: ${shares} x ${(target - entry).toFixed(2)} = ${currency}${potentialProfit.toFixed(2)}</p>
-                <p class='${ratioColor} font-bold'>Reward-to-risk ratio: ${rewardToRiskRatio.toFixed(2)}</p>
-            `;
+
+            document.getElementById('result').innerHTML = `<p class='text-green-400 font-bold text-lg'>Buy ${shares} shares</p>`;
 
             setCookie('balance', balance, 30);
             setCookie('risk', riskPercent * 100, 30);
@@ -110,17 +111,29 @@
         }
 
         function saveTrade() {
-            let trade = document.getElementById('result').innerHTML;
-            if (!trade) return;
+            let name = document.getElementById('tradeName').value || 'Unnamed Trade';
+            let symbol = document.getElementById('stockSymbol').value || 'N/A';
+            let date = new Date().toLocaleDateString();
             let tradeList = getCookie('trades') ? JSON.parse(getCookie('trades')) : [];
-            tradeList.push(trade);
+            tradeList.push({ name, symbol, date });
             setCookie('trades', JSON.stringify(tradeList), 30);
             loadTrades();
         }
 
         function loadTrades() {
             let trades = getCookie('trades') ? JSON.parse(getCookie('trades')) : [];
-            document.getElementById('trades').innerHTML = trades.map(t => `<div class='p-2 bg-gray-700 rounded mt-2'>${t}</div>`).join('');
+            document.getElementById('trades').innerHTML = trades.map((t, i) => `
+                <div class='p-2 bg-gray-700 rounded mt-2 flex justify-between'>
+                    <span>${t.name} (${t.symbol}) - ${t.date}</span>
+                    <button onclick='deleteTrade(${i})' class='text-red-400'>✖</button>
+                </div>`).join('');
+        }
+
+        function deleteTrade(index) {
+            let trades = JSON.parse(getCookie('trades'));
+            trades.splice(index, 1);
+            setCookie('trades', JSON.stringify(trades), 30);
+            loadTrades();
         }
 
         loadLastCalculation();
