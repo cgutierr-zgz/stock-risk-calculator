@@ -12,14 +12,6 @@
         <h1 class="text-2xl font-bold mb-4 text-center">Stock Risk Calculator</h1>
         <div class="space-y-3">
             <div>
-                <label class="block">Trade Name</label>
-                <input type="text" id="tradeName" class="w-full p-2 rounded bg-gray-700 text-white">
-            </div>
-            <div>
-                <label class="block">Stock Symbol</label>
-                <input type="text" id="stockSymbol" class="w-full p-2 rounded bg-gray-700 text-white">
-            </div>
-            <div>
                 <label class="block">Account Balance</label>
                 <div class="flex space-x-2">
                     <input type="number" id="balance" class="w-full p-2 rounded bg-gray-700 text-white">
@@ -50,7 +42,18 @@
             <button onclick="calculate()" class="w-full bg-blue-500 p-2 rounded mt-4 hover:bg-blue-600">Calculate</button>
         </div>
         <div id="result" class="mt-4 text-sm"></div>
-        <button onclick="saveTrade()" class="w-full bg-green-500 p-2 rounded mt-2 hover:bg-green-600">Save Trade</button>
+        <button onclick="openSavePopup()" class="w-full bg-green-500 p-2 rounded mt-2 hover:bg-green-600">Save Trade</button>
+        
+        <div id="savePopup" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
+            <div class="bg-gray-800 p-6 rounded-lg w-80">
+                <h2 class="text-lg font-bold mb-2">Save Trade</h2>
+                <label class="block">Stock Symbol</label>
+                <input type="text" id="stockSymbol" class="w-full p-2 rounded bg-gray-700 text-white mb-4">
+                <button onclick="saveTrade()" class="w-full bg-green-500 p-2 rounded hover:bg-green-600">Save</button>
+                <button onclick="closeSavePopup()" class="w-full bg-red-500 p-2 rounded mt-2 hover:bg-red-600">Cancel</button>
+            </div>
+        </div>
+
         <div id="tradesMenu" class="hidden absolute top-0 right-0 bg-gray-800 w-64 h-full p-4 shadow-lg">
             <button onclick="toggleMenu()" class="absolute top-2 right-2 text-white">✖</button>
             <h2 class="text-lg font-bold">Saved Trades</h2>
@@ -59,10 +62,22 @@
     </div>
 
     <script>
+        // Toggle the saved trades menu
         function toggleMenu() {
             document.getElementById('tradesMenu').classList.toggle('hidden');
         }
 
+        // Open the popup to save a trade
+        function openSavePopup() {
+            document.getElementById('savePopup').classList.remove('hidden');
+        }
+
+        // Close the popup to save a trade
+        function closeSavePopup() {
+            document.getElementById('savePopup').classList.add('hidden');
+        }
+
+        // Get a specific cookie value
         function getCookie(name) {
             let cookies = document.cookie.split('; ');
             for (let cookie of cookies) {
@@ -72,63 +87,80 @@
             return null;
         }
 
+        // Set a cookie with a specific name, value, and expiry
         function setCookie(name, value, days) {
             let expires = new Date();
             expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
             document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/`;
         }
 
-        function loadLastCalculation() {
-            document.getElementById('balance').value = getCookie('balance') || 10000;
-            document.getElementById('risk').value = getCookie('risk') || 1;
-            document.getElementById('entry').value = getCookie('entry') || 49.52;
-            document.getElementById('stop').value = getCookie('stop') || 47.69;
-            document.getElementById('target').value = getCookie('target') || 55.61;
-            document.getElementById('currency').value = getCookie('currency') || "$";
-        }
-
+        // Calculate risk/reward ratio
         function calculate() {
             let balance = parseFloat(document.getElementById('balance').value);
-            let riskPercent = parseFloat(document.getElementById('risk').value) / 100;
-            let entry = parseFloat(document.getElementById('entry').value);
-            let stop = parseFloat(document.getElementById('stop').value);
-            let target = parseFloat(document.getElementById('target').value);
-            let currency = document.getElementById('currency').value;
-            
-            let riskAmount = balance * riskPercent;
-            let riskPerShare = entry - stop;
-            let shares = Math.floor(riskAmount / riskPerShare);
-            let potentialProfit = shares * (target - entry);
+            let riskPercentage = parseFloat(document.getElementById('risk').value);
+            let entryPrice = parseFloat(document.getElementById('entry').value);
+            let stopPrice = parseFloat(document.getElementById('stop').value);
+            let targetPrice = parseFloat(document.getElementById('target').value);
 
-            document.getElementById('result').innerHTML = `<p class='text-green-400 font-bold text-lg'>Buy ${shares} shares</p>`;
+            if (isNaN(balance) || isNaN(riskPercentage) || isNaN(entryPrice) || isNaN(stopPrice) || isNaN(targetPrice)) {
+                document.getElementById('result').innerHTML = "Please fill out all fields with valid numbers.";
+                return;
+            }
 
-            setCookie('balance', balance, 30);
-            setCookie('risk', riskPercent * 100, 30);
-            setCookie('entry', entry, 30);
-            setCookie('stop', stop, 30);
-            setCookie('target', target, 30);
-            setCookie('currency', currency, 30);
+            let riskAmount = (balance * (riskPercentage / 100));
+            let stopLoss = entryPrice - stopPrice;
+            let reward = targetPrice - entryPrice;
+            let riskRewardRatio = reward / stopLoss;
+
+            document.getElementById('result').innerHTML = `
+                <p>Risk Amount: ${riskAmount.toFixed(2)}</p>
+                <p>Stop Loss: ${stopLoss.toFixed(2)}</p>
+                <p>Reward: ${reward.toFixed(2)}</p>
+                <p>Risk/Reward Ratio: ${riskRewardRatio.toFixed(2)}</p>
+            `;
         }
 
+        // Save the trade
         function saveTrade() {
-            let name = document.getElementById('tradeName').value || 'Unnamed Trade';
             let symbol = document.getElementById('stockSymbol').value || 'N/A';
             let date = new Date().toLocaleDateString();
+            let trade = {
+                symbol, date,
+                balance: document.getElementById('balance').value,
+                risk: document.getElementById('risk').value,
+                entry: document.getElementById('entry').value,
+                stop: document.getElementById('stop').value,
+                target: document.getElementById('target').value
+            };
             let tradeList = getCookie('trades') ? JSON.parse(getCookie('trades')) : [];
-            tradeList.push({ name, symbol, date });
+            tradeList.push(trade);
             setCookie('trades', JSON.stringify(tradeList), 30);
             loadTrades();
+            closeSavePopup();
         }
 
+        // Load saved trades from cookies
         function loadTrades() {
             let trades = getCookie('trades') ? JSON.parse(getCookie('trades')) : [];
             document.getElementById('trades').innerHTML = trades.map((t, i) => `
                 <div class='p-2 bg-gray-700 rounded mt-2 flex justify-between'>
-                    <span>${t.name} (${t.symbol}) - ${t.date}</span>
+                    <span onclick='loadTrade(${i})' class='cursor-pointer'>${t.symbol} - ${t.date}</span>
                     <button onclick='deleteTrade(${i})' class='text-red-400'>✖</button>
                 </div>`).join('');
         }
 
+        // Load a saved trade into the calculator
+        function loadTrade(index) {
+            let trades = JSON.parse(getCookie('trades'));
+            let trade = trades[index];
+            document.getElementById('balance').value = trade.balance;
+            document.getElementById('risk').value = trade.risk;
+            document.getElementById('entry').value = trade.entry;
+            document.getElementById('stop').value = trade.stop;
+            document.getElementById('target').value = trade.target;
+        }
+
+        // Delete a saved trade
         function deleteTrade(index) {
             let trades = JSON.parse(getCookie('trades'));
             trades.splice(index, 1);
@@ -136,8 +168,7 @@
             loadTrades();
         }
 
-        loadLastCalculation();
-        loadTrades();
+        loadTrades();  // Load trades on page load
     </script>
 </body>
 </html>
