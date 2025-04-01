@@ -1,174 +1,257 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Risk Calculator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="flex justify-center items-center h-screen bg-gray-900 text-white">
-    <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-96 relative">
-        <button onclick="toggleMenu()" class="absolute top-2 right-2 bg-gray-700 p-2 rounded">☰</button>
-        <h1 class="text-2xl font-bold mb-4 text-center">Stock Risk Calculator</h1>
-        <div class="space-y-3">
-            <div>
-                <label class="block">Account Balance</label>
-                <div class="flex space-x-2">
-                    <input type="number" id="balance" class="w-full p-2 rounded bg-gray-700 text-white">
-                    <select id="currency" class="p-2 rounded bg-gray-700 text-white">
-                        <option value="$">$</option>
-                        <option value="€">€</option>
-                        <option value="¥">¥</option>
-                        <option value="£">£</option>
-                    </select>
-                </div>
-            </div>
-            <div>
-                <label class="block">Risk Percentage (%)</label>
-                <input type="number" id="risk" class="w-full p-2 rounded bg-gray-700 text-white">
-            </div>
-            <div>
-                <label class="block">Entry Price</label>
-                <input type="number" id="entry" class="w-full p-2 rounded bg-gray-700 text-white">
-            </div>
-            <div>
-                <label class="block">Stop Loss Price</label>
-                <input type="number" id="stop" class="w-full p-2 rounded bg-gray-700 text-white">
-            </div>
-            <div>
-                <label class="block">Target Price</label>
-                <input type="number" id="target" class="w-full p-2 rounded bg-gray-700 text-white">
-            </div>
-            <button onclick="calculate()" class="w-full bg-blue-500 p-2 rounded mt-4 hover:bg-blue-600">Calculate</button>
-        </div>
-        <div id="result" class="mt-4 text-sm"></div>
-        <button onclick="openSavePopup()" class="w-full bg-green-500 p-2 rounded mt-2 hover:bg-green-600">Save Trade</button>
-        
-        <div id="savePopup" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
-            <div class="bg-gray-800 p-6 rounded-lg w-80">
-                <h2 class="text-lg font-bold mb-2">Save Trade</h2>
-                <label class="block">Stock Symbol</label>
-                <input type="text" id="stockSymbol" class="w-full p-2 rounded bg-gray-700 text-white mb-4">
-                <button onclick="saveTrade()" class="w-full bg-green-500 p-2 rounded hover:bg-green-600">Save</button>
-                <button onclick="closeSavePopup()" class="w-full bg-red-500 p-2 rounded mt-2 hover:bg-red-600">Cancel</button>
-            </div>
-        </div>
+ <html lang="en">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Stock Risk Calculator</title>
+     <script src="https://cdn.tailwindcss.com"></script>
+ </head>
+ <body class="flex justify-center items-center h-screen bg-gray-900 text-white">
+     <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-96 relative">
+         <div class="flex justify-between items-center mb-4">
+             <h1 class="text-2xl font-bold text-center flex-1">Stock Risk Calculator</h1>
+             <div id="burgerMenu" class="cursor-pointer ml-2 hidden" onclick="toggleTradesMenu()">
+                 ☰
+             </div>
+         </div>
+         <div class="space-y-3">
+             <div>
+                 <label class="block">Account Balance</label>
+                 <div class="flex space-x-2">
+                     <input type="number" id="balance" class="w-full p-2 rounded bg-gray-700 text-white" value="10000">
+                     <select id="currency" class="p-2 rounded bg-gray-700 text-white">
+                         <option value="$">$</option>
+                         <option value="€">€</option>
+                         <option value="¥">¥</option>
+                         <option value="£">£</option>
+                     </select>
+                 </div>
+             </div>
+             
+             <div>
+                 <label class="block">Risk Percentage (%)</label>
+                 <input type="number" id="risk" class="w-full p-2 rounded bg-gray-700 text-white" value="1">
+             </div>
+             
+             <div>
+                 <label class="block">Entry Price</label>
+                 <input type="number" id="entry" class="w-full p-2 rounded bg-gray-700 text-white" value="49.52">
+             </div>
+             
+             <div>
+                 <label class="block">Stop Loss Price</label>
+                 <input type="number" id="stop" class="w-full p-2 rounded bg-gray-700 text-white" value="47.69">
+             </div>
+             
+             <div>
+                 <label class="block">Target Price</label>
+                 <input type="number" id="target" class="w-full p-2 rounded bg-gray-700 text-white" value="55.61">
+             </div>
+             
+             <div class="flex space-x-2">
+                 <button onclick="calculate()" class="flex-1 bg-blue-500 p-2 rounded mt-4 hover:bg-blue-600">Calculate</button>
+                 <button id="saveBtn" onclick="openSaveModal()" class="bg-green-500 p-2 rounded mt-4 hover:bg-green-600 opacity-50 cursor-not-allowed" disabled>
+                     💾
+                 </button>
+             </div>
+         </div>
+         <div id="result" class="mt-4 text-sm"></div>
 
-        <div id="tradesMenu" class="hidden absolute top-0 right-0 bg-gray-800 w-64 h-full p-4 shadow-lg">
-            <button onclick="toggleMenu()" class="absolute top-2 right-2 text-white">✖</button>
-            <h2 class="text-lg font-bold">Saved Trades</h2>
-            <div id="trades" class="mt-4 text-sm"></div>
-        </div>
-    </div>
+         <!-- Modal for saving trade -->
+         <div id="saveModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center">
+             <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
+                 <label class="block mb-2">Symbol</label>
+                 <input type="text" id="tradeSymbol" class="w-full p-2 rounded bg-gray-700 text-white mb-4" placeholder="e.g. TSLA">
+                 <div class="flex justify-end space-x-2">
+                     <button onclick="closeSaveModal()" class="bg-gray-600 p-2 rounded hover:bg-gray-700">Cancel</button>
+                     <button onclick="saveTrade()" class="bg-green-500 p-2 rounded hover:bg-green-600">Save</button>
+                 </div>
+             </div>
+         </div>
+     </div>
 
-    <script>
-        // Toggle the saved trades menu
-        function toggleMenu() {
-            document.getElementById('tradesMenu').classList.toggle('hidden');
-        }
+     <!-- Saved trades popup -->
+     <div id="tradesMenu" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center">
+         <div class="bg-gray-800 p-4 rounded-lg shadow-lg w-80">
+             <h2 class="text-xl font-bold mb-2">Saved Trades</h2>
+             <ul id="savedTradesList" class="space-y-2"></ul>
+             <button onclick="toggleTradesMenu()" class="mt-4 bg-gray-600 p-2 rounded hover:bg-gray-700 w-full">Close</button>
+         </div>
+     </div>
 
-        // Open the popup to save a trade
-        function openSavePopup() {
-            document.getElementById('savePopup').classList.remove('hidden');
-        }
+     <!-- Trade details popup -->
+     <div id="tradeDetailsPopup" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center">
+         <div class="bg-gray-800 p-4 rounded-lg shadow-lg w-80">
+             <div id="tradeDetailsContent" class="text-gray-300 space-y-2"></div>
+             <button onclick="closeTradeDetails()" class="mt-4 bg-gray-600 p-2 rounded hover:bg-gray-700 w-full">Close</button>
+         </div>
+     </div>
+ 
+     <script>
+         function calculate() {
+             let balance = parseFloat(document.getElementById('balance').value);
+             let riskPercent = parseFloat(document.getElementById('risk').value) / 100;
+             let entry = parseFloat(document.getElementById('entry').value);
+             let stop = parseFloat(document.getElementById('stop').value);
+             let target = parseFloat(document.getElementById('target').value);
+             let currency = document.getElementById('currency').value;
+             
+             let riskAmount = balance * riskPercent;
+             let riskPerShare = entry - stop;
+             let shares = Math.floor(riskAmount / riskPerShare);
+             let positionSize = shares * entry;
+             let potentialProfit = shares * (target - entry);
+             let rewardToRiskRatio = (target - entry) / (entry - stop);
+             
+             let ratioColor = rewardToRiskRatio > 5 ? 'text-blue-400' :
+                              rewardToRiskRatio > 2.5 ? 'text-green-400' :
+                              rewardToRiskRatio > 1 ? 'text-orange-400' : 'text-red-400';
+             
+             document.getElementById('result').innerHTML = `
+                 <p class='text-green-400 font-bold text-lg'>Buy ${shares} shares</p>
+                 <p class='text-gray-400 text-sm'>Rounded down to stay within risk limits</p>
+                 <p class='text-green-400 font-bold'>Potential profit: ${shares} x ${(target - entry).toFixed(2)} = ${currency}${potentialProfit.toFixed(2)}</p>
+                 <p class='${ratioColor} font-bold'>Reward-to-risk ratio: ${rewardToRiskRatio.toFixed(2)}</p>
+                 <button onclick="toggleDetails()" id="toggle-btn" class="mt-2 text-blue-400 underline">Show details</button>
+                 <div id="details" class="hidden mt-4 p-3 bg-gray-700 rounded-lg shadow-lg">
+                     <p class="text-gray-300"><span class="font-bold text-white">Account balance:</span> ${currency}${balance.toFixed(2)}</p>
+                     <p class="text-gray-300"><span class="font-bold text-white">Risk per trade:</span> 1% of ${currency}${balance.toFixed(2)} = ${currency}${riskAmount.toFixed(2)}</p>
+                     <p class="text-gray-300"><span class="font-bold text-white">Entry price:</span> ${currency}${entry.toFixed(2)}</p>
+                     <p class="text-gray-300"><span class="font-bold text-white">Stop loss price:</span> ${currency}${stop.toFixed(2)}</p>
+                     <p class="text-gray-300"><span class="font-bold text-white">Risk per share:</span> ${currency}${(entry - stop).toFixed(2)}</p>
+                     <p class="text-gray-300"><span class="font-bold text-white">Position size:</span> ${shares} x ${currency}${entry.toFixed(2)} = ${currency}${positionSize.toFixed(2)}</p>
+                 </div>
+             `;
+             document.getElementById('saveBtn').disabled = false;
+             document.getElementById('saveBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+         }
+         
+         function toggleDetails() {
+             let details = document.getElementById("details");
+             let toggleBtn = document.getElementById("toggle-btn");
+             details.classList.toggle("hidden");
+             toggleBtn.innerText = details.classList.contains("hidden") ? "Show details" : "Hide details";
+         }
 
-        // Close the popup to save a trade
-        function closeSavePopup() {
-            document.getElementById('savePopup').classList.add('hidden');
-        }
+         function toggleTradesMenu() {
+             const tradesMenu = document.getElementById('tradesMenu');
+             tradesMenu.classList.toggle('hidden');
+             tradesMenu.classList.toggle('flex');
+         }
 
-        // Get a specific cookie value
-        function getCookie(name) {
-            let cookies = document.cookie.split('; ');
-            for (let cookie of cookies) {
-                let [key, value] = cookie.split('=');
-                if (key === name) return decodeURIComponent(value);
-            }
-            return null;
-        }
+         function closeTradeDetails() {
+             const tradeDetailsPopup = document.getElementById('tradeDetailsPopup');
+             tradeDetailsPopup.classList.add('hidden');
+             tradeDetailsPopup.classList.remove('flex');
+         }
 
-        // Set a cookie with a specific name, value, and expiry
-        function setCookie(name, value, days) {
-            let expires = new Date();
-            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-            document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/`;
-        }
+         function openSaveModal() {
+             document.getElementById('saveModal').classList.remove('hidden');
+             document.getElementById('saveModal').classList.add('flex');
+         }
 
-        // Calculate risk/reward ratio
-        function calculate() {
-            let balance = parseFloat(document.getElementById('balance').value);
-            let riskPercentage = parseFloat(document.getElementById('risk').value);
-            let entryPrice = parseFloat(document.getElementById('entry').value);
-            let stopPrice = parseFloat(document.getElementById('stop').value);
-            let targetPrice = parseFloat(document.getElementById('target').value);
+         function closeSaveModal() {
+             document.getElementById('saveModal').classList.add('hidden');
+             document.getElementById('saveModal').classList.remove('flex');
+         }
 
-            if (isNaN(balance) || isNaN(riskPercentage) || isNaN(entryPrice) || isNaN(stopPrice) || isNaN(targetPrice)) {
-                document.getElementById('result').innerHTML = "Please fill out all fields with valid numbers.";
-                return;
-            }
+         function saveTrade() {
+             const symbol = document.getElementById('tradeSymbol').value.trim();
+             if (!symbol) return alert('Please enter a symbol.');
 
-            let riskAmount = (balance * (riskPercentage / 100));
-            let stopLoss = entryPrice - stopPrice;
-            let reward = targetPrice - entryPrice;
-            let riskRewardRatio = reward / stopLoss;
+             const trade = {
+                 symbol,
+                 balance: parseFloat(document.getElementById('balance').value),
+                 riskPercent: parseFloat(document.getElementById('risk').value),
+                 entry: parseFloat(document.getElementById('entry').value),
+                 stop: parseFloat(document.getElementById('stop').value),
+                 target: parseFloat(document.getElementById('target').value),
+                 currency: document.getElementById('currency').value,
+                 date: new Date().toISOString()
+             };
 
-            document.getElementById('result').innerHTML = `
-                <p>Risk Amount: ${riskAmount.toFixed(2)}</p>
-                <p>Stop Loss: ${stopLoss.toFixed(2)}</p>
-                <p>Reward: ${reward.toFixed(2)}</p>
-                <p>Risk/Reward Ratio: ${riskRewardRatio.toFixed(2)}</p>
-            `;
-        }
+             const trades = JSON.parse(localStorage.getItem('trades') || '[]');
+             trades.unshift(trade); // latest first
+             localStorage.setItem('trades', JSON.stringify(trades));
 
-        // Save the trade
-        function saveTrade() {
-            let symbol = document.getElementById('stockSymbol').value || 'N/A';
-            let date = new Date().toLocaleDateString();
-            let trade = {
-                symbol, date,
-                balance: document.getElementById('balance').value,
-                risk: document.getElementById('risk').value,
-                entry: document.getElementById('entry').value,
-                stop: document.getElementById('stop').value,
-                target: document.getElementById('target').value
-            };
-            let tradeList = getCookie('trades') ? JSON.parse(getCookie('trades')) : [];
-            tradeList.push(trade);
-            setCookie('trades', JSON.stringify(tradeList), 30);
-            loadTrades();
-            closeSavePopup();
-        }
+             closeSaveModal();
+             renderSavedTrades();
+         }
 
-        // Load saved trades from cookies
-        function loadTrades() {
-            let trades = getCookie('trades') ? JSON.parse(getCookie('trades')) : [];
-            document.getElementById('trades').innerHTML = trades.map((t, i) => `
-                <div class='p-2 bg-gray-700 rounded mt-2 flex justify-between'>
-                    <span onclick='loadTrade(${i})' class='cursor-pointer'>${t.symbol} - ${t.date}</span>
-                    <button onclick='deleteTrade(${i})' class='text-red-400'>✖</button>
-                </div>`).join('');
-        }
+         function renderSavedTrades() {
+             const trades = JSON.parse(localStorage.getItem('trades') || '[]');
+             const burgerMenu = document.getElementById('burgerMenu');
+             burgerMenu.classList.toggle('hidden', trades.length === 0);
 
-        // Load a saved trade into the calculator
-        function loadTrade(index) {
-            let trades = JSON.parse(getCookie('trades'));
-            let trade = trades[index];
-            document.getElementById('balance').value = trade.balance;
-            document.getElementById('risk').value = trade.risk;
-            document.getElementById('entry').value = trade.entry;
-            document.getElementById('stop').value = trade.stop;
-            document.getElementById('target').value = trade.target;
-        }
+             const list = document.getElementById('savedTradesList');
+             list.innerHTML = trades.map((trade, index) => {
+                 const shares = Math.floor((trade.balance * (trade.riskPercent / 100)) / (trade.entry - trade.stop));
+                 const upsideValue = ((trade.target - trade.entry) / trade.entry * 100);
+                 const upside = upsideValue.toFixed(2);
+                 const upsideColor = upsideValue >= 0 ? 'text-green-400' : 'text-red-400';
+                 const upsideText = upsideValue >= 0 ? `+${upside}%` : `${upside}%`;
 
-        // Delete a saved trade
-        function deleteTrade(index) {
-            let trades = JSON.parse(getCookie('trades'));
-            trades.splice(index, 1);
-            setCookie('trades', JSON.stringify(trades), 30);
-            loadTrades();
-        }
+                 return `
+                     <li class="group flex justify-between items-center bg-gray-700 hover:bg-gray-600 p-3 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg">
+                         <div class="flex items-center space-x-3 cursor-pointer" onclick="showTradeDetails(${index})">
+                             <span class="text-xl font-semibold hover:text-blue-400 transition-colors">${trade.symbol}</span>
+                             <span class="text-sm ${upsideColor} font-medium">${upsideText}</span>
+                         </div>
+                         <div class="flex items-center space-x-4">
+                             <span class="bg-gray-800 px-3 py-1 rounded-full text-sm font-medium">${shares} shares</span>
+                             <button onclick="deleteTrade(event, ${index})" 
+                                     class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 
+                                            text-gray-400 hover:text-red-400 transform hover:scale-110">
+                                    🗑 
+                                </button>
+                            </div>
+                        </li>
+                    `;
+             }).join('');
+         }
 
-        loadTrades();  // Load trades on page load
-    </script>
-</body>
-</html>
+         function deleteTrade(event, index) {
+             event.stopPropagation();
+             let trades = JSON.parse(localStorage.getItem('trades') || '[]');
+             trades.splice(index, 1);
+             localStorage.setItem('trades', JSON.stringify(trades));
+             renderSavedTrades();
+         }
+
+         function showTradeDetails(index) {
+             const trades = JSON.parse(localStorage.getItem('trades') || '[]');
+             const trade = trades[index];
+             const shares = Math.floor((trade.balance * (trade.riskPercent / 100)) / (trade.entry - trade.stop));
+             const positionSize = shares * trade.entry;
+             const potentialProfit = shares * (trade.target - trade.entry);
+             const rewardToRiskRatio = (trade.target - trade.entry) / (trade.entry - trade.stop);
+             const upsideValue = ((trade.target - trade.entry) / trade.entry * 100);
+             const upsideColor = upsideValue >= 0 ? 'text-green-400' : 'text-red-400';
+
+             document.getElementById('tradeDetailsContent').innerHTML = `
+                 <h2 class="text-xl font-bold mb-2">${trade.symbol}</h2>
+                 <div class="space-y-1">
+                     <p><strong>Account Balance:</strong> ${trade.currency}${trade.balance.toFixed(2)}</p>
+                     <p><strong>Risk per trade:</strong> ${trade.riskPercent}% (${trade.currency}${(trade.balance * trade.riskPercent / 100).toFixed(2)})</p>
+                     <p><strong>Entry Price:</strong> ${trade.currency}${trade.entry.toFixed(2)}</p>
+                     <p><strong>Stop Loss Price:</strong> ${trade.currency}${trade.stop.toFixed(2)}</p>
+                     <p><strong>Target Price:</strong> ${trade.currency}${trade.target.toFixed(2)}</p>
+                     <p><strong>Shares to Buy:</strong> ${shares}</p>
+                     <p><strong>Position Size:</strong> ${trade.currency}${positionSize.toFixed(2)}</p>
+                     <p><strong>Potential Profit:</strong> <span class="${upsideColor}">${trade.currency}${potentialProfit.toFixed(2)} (${upsideValue.toFixed(2)}%)</span></p>
+                     <p><strong>Reward-to-Risk Ratio:</strong> ${rewardToRiskRatio.toFixed(2)}</p>
+                 </div>
+             `;
+             document.getElementById('tradeDetailsPopup').classList.remove('hidden');
+             document.getElementById('tradeDetailsPopup').classList.add('flex');
+         }
+
+         // Disable save button initially
+         document.getElementById('saveBtn').disabled = true;
+         document.getElementById('saveBtn').classList.add('opacity-50', 'cursor-not-allowed');
+
+         // Initial render of saved trades
+         renderSavedTrades();
+     </script>
+ </body>
+ </html>
