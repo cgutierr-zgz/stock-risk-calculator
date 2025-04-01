@@ -13,7 +13,7 @@
             <div>
                 <label class="block">Account Balance</label>
                 <div class="flex space-x-2">
-                    <input type="number" id="balance" class="w-full p-2 rounded bg-gray-700 text-white" value="10000">
+                    <input type="number" id="balance" class="w-full p-2 rounded bg-gray-700 text-white">
                     <select id="currency" class="p-2 rounded bg-gray-700 text-white">
                         <option value="$">$</option>
                         <option value="€">€</option>
@@ -25,30 +25,56 @@
             
             <div>
                 <label class="block">Risk Percentage (%)</label>
-                <input type="number" id="risk" class="w-full p-2 rounded bg-gray-700 text-white" value="1">
+                <input type="number" id="risk" class="w-full p-2 rounded bg-gray-700 text-white">
             </div>
             
             <div>
                 <label class="block">Entry Price</label>
-                <input type="number" id="entry" class="w-full p-2 rounded bg-gray-700 text-white" value="49.52">
+                <input type="number" id="entry" class="w-full p-2 rounded bg-gray-700 text-white">
             </div>
             
             <div>
                 <label class="block">Stop Loss Price</label>
-                <input type="number" id="stop" class="w-full p-2 rounded bg-gray-700 text-white" value="47.69">
+                <input type="number" id="stop" class="w-full p-2 rounded bg-gray-700 text-white">
             </div>
             
             <div>
                 <label class="block">Target Price</label>
-                <input type="number" id="target" class="w-full p-2 rounded bg-gray-700 text-white" value="55.61">
+                <input type="number" id="target" class="w-full p-2 rounded bg-gray-700 text-white">
             </div>
             
             <button onclick="calculate()" class="w-full bg-blue-500 p-2 rounded mt-4 hover:bg-blue-600">Calculate</button>
         </div>
         <div id="result" class="mt-4 text-sm"></div>
+        <button onclick="saveTrade()" class="w-full bg-green-500 p-2 rounded mt-2 hover:bg-green-600">Save Trade</button>
+        <div id="trades" class="mt-4 text-sm"></div>
     </div>
 
     <script>
+        function getCookie(name) {
+            let cookies = document.cookie.split('; ');
+            for (let cookie of cookies) {
+                let [key, value] = cookie.split('=');
+                if (key === name) return decodeURIComponent(value);
+            }
+            return null;
+        }
+
+        function setCookie(name, value, days) {
+            let expires = new Date();
+            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/`;
+        }
+
+        function loadLastCalculation() {
+            document.getElementById('balance').value = getCookie('balance') || 10000;
+            document.getElementById('risk').value = getCookie('risk') || 1;
+            document.getElementById('entry').value = getCookie('entry') || 49.52;
+            document.getElementById('stop').value = getCookie('stop') || 47.69;
+            document.getElementById('target').value = getCookie('target') || 55.61;
+            document.getElementById('currency').value = getCookie('currency') || "$";
+        }
+
         function calculate() {
             let balance = parseFloat(document.getElementById('balance').value);
             let riskPercent = parseFloat(document.getElementById('risk').value) / 100;
@@ -73,25 +99,32 @@
                 <p class='text-gray-400 text-sm'>Rounded down to stay within risk limits</p>
                 <p class='text-green-400 font-bold'>Potential profit: ${shares} x ${(target - entry).toFixed(2)} = ${currency}${potentialProfit.toFixed(2)}</p>
                 <p class='${ratioColor} font-bold'>Reward-to-risk ratio: ${rewardToRiskRatio.toFixed(2)}</p>
-                <button onclick="toggleDetails()" id="toggle-btn" class="mt-2 text-blue-400 underline">Show details</button>
-                <div id="details" class="hidden mt-4 p-3 bg-gray-700 rounded-lg shadow-lg">
-                    <p class="text-gray-300"><span class="font-bold text-white">Account balance:</span> ${currency}${balance.toFixed(2)}</p>
-                    <p class="text-gray-300"><span class="font-bold text-white">Risk per trade:</span> 1% of ${currency}${balance.toFixed(2)} = ${currency}${riskAmount.toFixed(2)}</p>
-                    <p class="text-gray-300"><span class="font-bold text-white">Entry price:</span> ${currency}${entry.toFixed(2)}</p>
-                    <p class="text-gray-300"><span class="font-bold text-white">Stop loss price:</span> ${currency}${stop.toFixed(2)}</p>
-                    <p class="text-gray-300"><span class="font-bold text-white">Risk per share:</span> ${currency}${(entry - stop).toFixed(2)}</p>
-                    <p class="text-gray-300"><span class="font-bold text-white">Position size:</span> ${shares} x ${currency}${entry.toFixed(2)} = ${currency}${positionSize.toFixed(2)}</p>
-                </div>
             `;
+
+            setCookie('balance', balance, 30);
+            setCookie('risk', riskPercent * 100, 30);
+            setCookie('entry', entry, 30);
+            setCookie('stop', stop, 30);
+            setCookie('target', target, 30);
+            setCookie('currency', currency, 30);
         }
-        
-        function toggleDetails() {
-            let details = document.getElementById("details");
-            let toggleBtn = document.getElementById("toggle-btn");
-            details.classList.toggle("hidden");
-            toggleBtn.innerText = details.classList.contains("hidden") ? "Show details" : "Hide details";
+
+        function saveTrade() {
+            let trade = document.getElementById('result').innerHTML;
+            if (!trade) return;
+            let tradeList = getCookie('trades') ? JSON.parse(getCookie('trades')) : [];
+            tradeList.push(trade);
+            setCookie('trades', JSON.stringify(tradeList), 30);
+            loadTrades();
         }
+
+        function loadTrades() {
+            let trades = getCookie('trades') ? JSON.parse(getCookie('trades')) : [];
+            document.getElementById('trades').innerHTML = trades.map(t => `<div class='p-2 bg-gray-700 rounded mt-2'>${t}</div>`).join('');
+        }
+
+        loadLastCalculation();
+        loadTrades();
     </script>
 </body>
 </html>
-
