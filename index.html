@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Risk Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex justify-center items-center h-screen bg-gray-900 text-white">
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
+        <h1 class="text-2xl font-bold mb-4 text-center">Stock Risk Calculator</h1>
+        <div class="space-y-3">
+            <div>
+                <label class="block">Account Balance</label>
+                <div class="flex space-x-2">
+                    <input type="number" id="balance" class="w-full p-2 rounded bg-gray-700 text-white" value="10000">
+                    <select id="currency" class="p-2 rounded bg-gray-700 text-white">
+                        <option value="$">$</option>
+                        <option value="€">€</option>
+                        <option value="¥">¥</option>
+                        <option value="£">£</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block">Risk Percentage (%)</label>
+                <input type="number" id="risk" class="w-full p-2 rounded bg-gray-700 text-white" value="1">
+            </div>
+            
+            <div>
+                <label class="block">Entry Price</label>
+                <input type="number" id="entry" class="w-full p-2 rounded bg-gray-700 text-white" value="49.52">
+            </div>
+            
+            <div>
+                <label class="block">Stop Loss Price</label>
+                <input type="number" id="stop" class="w-full p-2 rounded bg-gray-700 text-white" value="47.69">
+            </div>
+            
+            <div>
+                <label class="block">Target Price</label>
+                <input type="number" id="target" class="w-full p-2 rounded bg-gray-700 text-white" value="55.61">
+            </div>
+            
+            <button onclick="calculate()" class="w-full bg-blue-500 p-2 rounded mt-4 hover:bg-blue-600">Calculate</button>
+        </div>
+        <div id="result" class="mt-4 text-sm"></div>
+    </div>
+
+    <script>
+        function calculate() {
+            let balance = parseFloat(document.getElementById('balance').value);
+            let riskPercent = parseFloat(document.getElementById('risk').value) / 100;
+            let entry = parseFloat(document.getElementById('entry').value);
+            let stop = parseFloat(document.getElementById('stop').value);
+            let target = parseFloat(document.getElementById('target').value);
+            let currency = document.getElementById('currency').value;
+            
+            let riskAmount = balance * riskPercent;
+            let riskPerShare = entry - stop;
+            let shares = Math.floor(riskAmount / riskPerShare);
+            let positionSize = shares * entry;
+            let potentialProfit = shares * (target - entry);
+            let rewardToRiskRatio = (target - entry) / (entry - stop);
+            
+            let ratioColor = rewardToRiskRatio > 5 ? 'text-blue-400' :
+                             rewardToRiskRatio > 2.5 ? 'text-green-400' :
+                             rewardToRiskRatio > 1 ? 'text-orange-400' : 'text-red-400';
+            
+            document.getElementById('result').innerHTML = `
+                <p class='text-green-400 font-bold text-lg'>Buy ${shares} shares</p>
+                <p class='text-gray-400 text-sm'>Rounded down to stay within risk limits</p>
+                <p class='text-green-400 font-bold'>Potential profit: ${shares} x ${(target - entry).toFixed(2)} = ${currency}${potentialProfit.toFixed(2)}</p>
+                <p class='${ratioColor} font-bold'>Reward-to-risk ratio: ${rewardToRiskRatio.toFixed(2)}</p>
+                <button onclick="toggleDetails()" id="toggle-btn" class="mt-2 text-blue-400 underline">Show details</button>
+                <div id="details" class="hidden mt-4 p-3 bg-gray-700 rounded-lg shadow-lg">
+                    <p class="text-gray-300"><span class="font-bold text-white">Account balance:</span> ${currency}${balance.toFixed(2)}</p>
+                    <p class="text-gray-300"><span class="font-bold text-white">Risk per trade:</span> 1% of ${currency}${balance.toFixed(2)} = ${currency}${riskAmount.toFixed(2)}</p>
+                    <p class="text-gray-300"><span class="font-bold text-white">Entry price:</span> ${currency}${entry.toFixed(2)}</p>
+                    <p class="text-gray-300"><span class="font-bold text-white">Stop loss price:</span> ${currency}${stop.toFixed(2)}</p>
+                    <p class="text-gray-300"><span class="font-bold text-white">Risk per share:</span> ${currency}${(entry - stop).toFixed(2)}</p>
+                    <p class="text-gray-300"><span class="font-bold text-white">Position size:</span> ${shares} x ${currency}${entry.toFixed(2)} = ${currency}${positionSize.toFixed(2)}</p>
+                </div>
+            `;
+        }
+        
+        function toggleDetails() {
+            let details = document.getElementById("details");
+            let toggleBtn = document.getElementById("toggle-btn");
+            details.classList.toggle("hidden");
+            toggleBtn.innerText = details.classList.contains("hidden") ? "Show details" : "Hide details";
+        }
+    </script>
+</body>
+</html>
+
